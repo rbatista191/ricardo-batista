@@ -4,7 +4,7 @@ title: "How we built a low-cost data warehouse"
 pubDate: 2018-11-10
 description: "How we built a low-cost data warehouse"
 author: "rbatista19"
-excerpt: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et
+excerpt: Here at CompareEuropeGroup we faced a common issue most startups (and even larger companies…) face - accessing your own data. 
 image:
   src: 
   alt: 

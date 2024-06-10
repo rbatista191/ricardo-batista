@@ -1,10 +1,10 @@
 ---
 layout: ../../layouts/post.astro
 title: "How startups are inverting the marketing funnel"
-pubDate: 20217-01-18
+pubDate: 2017-01-18
 description: "How startups are inverting the marketing funnel"
 author: "rbatista19"
-excerpt: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et
+excerpt: Sat down in a nice coffeehouse in sunny Lisbon, an experienced digital marketer was inquiring me how is our approach to the customer conversion path, and what is the storytelling we use to attract the customer.
 image:
   src: 
   alt:
