@@ -3,7 +3,7 @@ layout: ../../layouts/post.astro
 title: "3 key initiatives to bootstrap your marketing"
 pubDate: 2017-04-04
 description: "3 key initiatives to bootstrap your marketing"
-author: "nicdun"
+author: "rbatista19"
 excerpt: It has been 6 months since I joined CompareEuropeGroup now, so I thought of recapping what I learnt in what feels like a short time.
 image:
   src: /pen-and-paper.webp
