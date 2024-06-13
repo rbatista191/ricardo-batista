@@ -6,7 +6,7 @@ description: "Day 3: First backlinks 🔗"
 author: "rbatista19"
 excerpt: I am sharing every day a lesson I learned while building my last products. Today it will be about your first backlinks.
 image:
-  src: /day4.png
+  src: /day4.jpg
   alt:
 tags: ["marketing", "seo", "solopreneur"]
 ---
