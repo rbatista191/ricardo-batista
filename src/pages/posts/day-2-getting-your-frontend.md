@@ -1,8 +1,8 @@
 ---
 layout: ../../layouts/post.astro
-title: "Day 2 out of 100: Getting your frontend up and running 🚅"
+title: "Day 2: Getting your frontend up and running 🚅"
 pubDate: 2024-06-10
-description: "Day 2 out of 100: Getting your frontend up and running 🚅"
+description: "Day 2: Getting your frontend up and running 🚅"
 author: "rbatista19"
 excerpt: I am sharing every day a lesson I learned while building my last products. Today it will be about frontend choice.
 image:

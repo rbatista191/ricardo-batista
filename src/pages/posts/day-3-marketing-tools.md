@@ -1,8 +1,8 @@
 ---
 layout: ../../layouts/post.astro
-title: "Day 3 out of 100: Marketing tools 🆙"
+title: "Day 3: Marketing tools 🆙"
 pubDate: 2024-06-11
-description: "Day 3 out of 100: Marketing tools 🆙"
+description: "Day 3: Marketing tools 🆙"
 author: "rbatista19"
 excerpt: I am sharing every day a lesson I learned while building my last products. Today it will be about marketing tools.
 image:

@@ -1,8 +1,8 @@
 ---
 layout: ../../layouts/post.astro
-title: "Day 1 out of 100: Getting your domain 🌐"
+title: "Day 1: Getting your domain 🌐"
 pubDate: 2024-06-10
-description: "Day 1 out of 100: Getting your domain 🌐"
+description: "Day 1: Getting your domain 🌐"
 author: "rbatista19"
 excerpt: I am sharing every day a lesson I learned while building my last products. Today it will be about domain choice.
 image:
