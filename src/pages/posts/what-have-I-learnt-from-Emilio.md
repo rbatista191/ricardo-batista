@@ -1,10 +1,10 @@
 ---
 layout: ../../layouts/post.astro
-title: "What have I learnt from building Emilio"
+title: "What have I learnt from building Emilio I"
 pubDate: 2024-06-13
-description: "What have I learnt from building Emilio"
+description: "What have I learnt from building Emilio I"
 author: "rbatista19"
-excerpt: Not every startup is a fairy tale - here are the learnings I took from building Emilio
+excerpt: Not every startup is a fairy tale - here are the learnings I took from building Emilio.
 image:
   src: 
   alt:
@@ -44,3 +44,5 @@ The important part is the learnings:
 I wish I could have written this article in a more positive tone. Maybe I should have written it in a year, when all bad vibes are gone. But it would sound less authentic and would make me soften my learnings - which are the most important things here.
 
 Thanks for reading 😊
+
+*(I recently added [Part 2](/posts/what-have-I-learnt-from-Emilio-ii/))*
