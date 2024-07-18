@@ -11,7 +11,7 @@ image:
 tags: ["startups", "learnings"]
 ---
 
-One month back I wrote about [what I learned building Emilio](/what-have-I-learnt-from-Emilio), and a few updates have resurfaced. 
+One month back I wrote about [what I learned building Emilio](/posts/what-have-I-learnt-from-Emilio/), and a few updates have resurfaced. 
 
 Emilio is shutting down. Against my will, my previous co-founder Daniel decided to shut down the service, removing all the permissions I had on the technical project. Through several intimidatory emails he has been trying to get the business platforms permissions for him, which I vehemently denied to avoid him harming our customers.
 
