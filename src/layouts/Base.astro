@@ -43,6 +43,17 @@ const {
 				document.querySelector('html')?.classList.remove('dark');
 			}
 		</script>
+
+		<!-- Google Analytics -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(...args: any[]) {
+				window.dataLayer.push(args);
+			}
+			gtag('js', new Date());
+			gtag('config', 'G-XXXXXXXXXX');
+		</script>
 	</head>
 	<body
 		class="flex min-h-screen flex-col bg-stone-100 font-mono text-gray-950 dark:bg-stone-900 dark:text-white"
@@ -56,6 +67,4 @@ const {
 	</body>
 </html>
 <style is:global>
-	:root {
-	}
 </style>
