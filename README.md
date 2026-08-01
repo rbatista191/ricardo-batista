@@ -4,7 +4,7 @@
 
 Explore the Astro.js Personal Blog Template – a sleek and feature-rich platform for your personal blog:
 
-- **Astro.js Powered**: Dynamic and efficient JavaScript-driven experience.
+- **Astro.js v5 Powered**: Dynamic and efficient JavaScript-driven experience.
 - **Tailwind CSS Integration**: Ensures a stylish and responsive design.
 - **RSS Feed Support**: Keeps your audience updated effortlessly.
 - **Markdown Compatibility**: Streamlines content creation with easy formatting.
@@ -69,6 +69,8 @@ If you find that something isn't working right then I'm always happy to hear it 
 2. [Submitting a pull request](https://github.com/nicdun/astro-tech-blog/pulls)
 3. [Starting a discussion](https://github.com/nicdun/astro-tech-blog/discussions)
 4. [Buying me a coffee!](https://www.buymeacoffee.com/nicdun)
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/nicdun)
 
 ## ☕ Thank you!
 A big thank you to the creators of the awesome Astro static site generator and to all using this starter to make the web a bit more accessible for all people around the world :)

@@ -1,10 +1,11 @@
 {
+	"extends": "astro/tsconfigs/strictest",
 	"compilerOptions": {
 		// Enable top-level await, and other modern ESM features.
 		"target": "ESNext",
 		"module": "ESNext",
 		// Enable node-style module resolution, for things like npm package imports.
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		// Enable JSON imports.
 		"resolveJsonModule": true,
 
@@ -42,5 +43,6 @@
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.astro", "src/components/PostOverview.tsx"]
+	"include": [".astro/types.d.ts", "**/*"],
+	"exclude": ["dist"]
 }
