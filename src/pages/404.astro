@@ -1,0 +1,23 @@
+---
+import Heading from '@/components/Heading.astro';
+import Section from '@/components/Section.astro';
+import Base from '@/layouts/Base.astro';
+import { AppConfig } from '@/utils/AppConfig';
+
+const title = `Page not found | ${AppConfig.title}`;
+const description = 'This page does not exist.';
+---
+
+<Base head={{ title, description }}>
+	<Section>
+		<Heading title="404 - page not found" />
+		<div class="pt-6 text-center">
+			<p>This page does not exist, or it has moved.</p>
+			<div class="pt-6">
+				<a href="/" class="underline hover:text-orange-600">home →</a>
+				<span class="px-2">-</span>
+				<a href="/posts" class="underline hover:text-orange-600">all posts →</a>
+			</div>
+		</div>
+	</Section>
+</Base>
