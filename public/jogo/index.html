@@ -41,14 +41,19 @@
     box-shadow: 0 10px 40px rgba(0,0,0,.3); margin: 16px; }
   .card h1 { margin: 0 0 6px; font-size: 42px; color: #ff4081; }
   .card p { font-size: 17px; color: #333; line-height: 1.4; margin: 6px 0; }
-  .card table { margin: 10px auto; font-size: 15px; color: #333; text-align: left; border-collapse: collapse; }
-  .card td { padding: 2px 10px; }
+  .card table { margin: 6px auto; font-size: 13px; color: #333; text-align: left; border-collapse: collapse; }
+  .card td { padding: 0 10px; }
   .card td:first-child { font-weight: 800; text-align: right; }
   .cars { display: flex; gap: 14px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
   .carbtn { font-size: 22px; font-weight: 900; padding: 12px 26px; border: 0; border-radius: 18px;
     color: #fff; cursor: pointer; }
   .carbtn small { display: block; font-size: 14px; font-weight: 700; opacity: .9; }
   .carbtn { box-shadow: 0 5px 0 rgba(0,0,0,.35); text-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  .drvbtn { font-size: 20px; font-weight: 900; padding: 10px 22px; border: 3px solid #ddd; border-radius: 18px;
+    background: #fafafa; color: #333; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+  .drvbtn small { display: block; font-size: 13px; font-weight: 600; color: #666; }
+  .drvbtn.on { border-color: #00c853; background: #e8f5e9; }
+  .face { width: 38px; height: 38px; border-radius: 50%; background: #f1c7a5; box-sizing: border-box; border-top: 13px solid; }
   .carbtn:active { transform: translateY(3px); box-shadow: none; }
   #planets { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
     background: rgba(0,0,30,.6); overflow: auto; }
@@ -68,7 +73,7 @@
 </div>
 <div id="airbox" class="shadow"></div>
 <div id="popups"></div>
-<div id="help">↑ ↓ acelerar / travar · ← → virar · Espaço saltar (Roadster: segura para os jatos) · Shift turbo · No ar: ↑ ↓ mortal · ← → pião · Q / E pirueta · R endireitar · C trocar de carro · H buzina / sirene / Ka-chow · P planeta · M som</div>
+<div id="help">↑ ↓ acelerar / travar · ← → virar · Espaço saltar (Roadster: segura para os jatos) · Shift turbo · No ar: ↑ ↓ mortal · ← → pião · Q / E pirueta · R endireitar · C trocar de carro · D condutor · H buzina / sirene / Ka-chow · P planeta · M som</div>
 <div id="planets">
   <div class="card">
     <h2>Escolhe o planeta</h2>
@@ -90,10 +95,13 @@
       <tr><td>No ar ← →</td><td>pião</td></tr>
       <tr><td>No ar Q / E</td><td>pirueta</td></tr>
       <tr><td>C</td><td>trocar de carro</td></tr>
+      <tr><td>D</td><td>trocar de condutor</td></tr>
       <tr><td>H</td><td>sirene, buzina ou Ka-chow!</td></tr>
       <tr><td>P</td><td>escolher o planeta</td></tr>
     </table>
     <p>Atenção: tens de aterrar com as rodas no chão!</p>
+    <p><b>Escolhe o condutor:</b></p>
+    <div class="cars" id="driverList"></div>
     <p><b>Escolhe o carro:</b></p>
     <div class="cars" id="carList"></div>
   </div>
@@ -690,9 +698,9 @@ function addBall(x, z) {
   const m = shade(new THREE.Mesh(new THREE.SphereGeometry(r, 32, 24), new THREE.MeshStandardMaterial({ map: ballTex, roughness: 0.4 })));
   m.position.set(x, r, z);
   scene.add(m);
-  balls.push({ m, r, vel: new THREE.Vector3(), cool: 0 });
+  balls.push({ m, r, vel: new THREE.Vector3(), cool: 0, home: [x, z], gone: 0 });
 }
-addBall(-20, 20); addBall(50, 5); addBall(-40, -20); addBall(100, -30); addBall(10, 100);
+addBall(-20, 20); addBall(50, 5); addBall(-15, -25); addBall(100, -30); addBall(10, 100);
 
 // ---------- Cars corner ----------
 // Stadium: oval track with banked bends, a wall, stands full of people,
@@ -927,7 +935,7 @@ function addTractor(x, z, yaw) {
   g.add(pivot);
   g.position.set(x, 0, z); g.rotation.y = yaw;
   scene.add(g);
-  tractors.push({ g, pivot, model, x, z, yaw, state: 0, t: 0, dir: 1 });
+  tractors.push({ g, pivot, model, x, z, yaw, state: 0, t: 0, dir: 1, gone: 0 });
 }
 
 // Motel of giant orange cones
@@ -966,6 +974,254 @@ for (let i = 0; i < 5; i++) {
     arm.position.set(cx + 0.9, 3, cz);
     scene.add(trunk, arm);
   }
+}
+
+// ---------- Bridge across the field ----------
+// Deck 8 m high from x = -120 to x = 110, ramps at both ends, pillars, railings and two towers with cables.
+const BRIDGE = { x0: -120, x1: 110, z: -32, w: 10, top: 8 };
+{
+  const { x0, x1, z: bz, w, top } = BRIDGE, len = x1 - x0, cx = (x0 + x1) / 2;
+  solids.push((x, z, o) => {
+    if (x < x0 || x > x1) return;
+    const dz = Math.abs(z - bz);
+    if (dz < w / 2) o.push(top, top - 1);
+    if (dz < w / 2 && dz > w / 2 - 0.6) o.push(top + 1.2, top - 1);   // railings
+  });
+  const road = canvasTex(256, 64, (g, cw, ch) => {
+    g.fillStyle = '#3d3d42'; g.fillRect(0, 0, cw, ch);
+    g.fillStyle = '#fdd835'; g.fillRect(0, ch / 2 - 2, cw / 2, 4);
+    g.fillStyle = '#fff'; g.fillRect(0, 3, cw, 3); g.fillRect(0, ch - 6, cw, 3);
+  });
+  road.wrapS = THREE.RepeatWrapping; road.repeat.set(len / 12, 1);
+  const red = lambert(0xc62828), concrete = lambert(0xb0b0b0), blue = lambert(0x1e63d6);
+  const deck = shade(new THREE.Mesh(new THREE.BoxGeometry(len, 1, w),
+    [red, red, new THREE.MeshLambertMaterial({ map: road }), red, red, red]));
+  deck.position.set(cx, top - 0.5, bz);
+  scene.add(deck);
+  for (const s of [-1, 1]) scene.add(box(len, 1.2, 0.5, blue, cx, top + 0.6, bz + s * (w / 2 - 0.25)));
+  for (let x = x0 + 10; x <= x1; x += 20) for (const s of [-1, 1]) {
+    const px = x, pz = bz + s * (w / 2 - 0.8);
+    solids.push((qx, qz, o) => { if (Math.abs(qx - px) < 0.6 && Math.abs(qz - pz) < 0.6) o.push(top - 1, 0); });
+    scene.add(box(1.2, top - 1, 1.2, concrete, px, (top - 1) / 2, pz));
+  }
+  addRamp({ x: x0 - 11, z: bz, rot: Math.PI / 2, L: 22, W: 9, H: top, kicker: false, side: 0xc62828, top: 0x3d3d42 });
+  addRamp({ x: x1 + 11, z: bz, rot: -Math.PI / 2, L: 22, W: 9, H: top, kicker: false, side: 0xc62828, top: 0x3d3d42 });
+  const cableMat = new THREE.LineBasicMaterial({ color: 0x222222 });
+  for (const tx of [-5, 65]) {
+    for (const s of [-1, 1]) {
+      const tz = bz + s * (w / 2 + 0.9);
+      solids.push((x, z, o) => { if (Math.abs(x - tx) < 0.8 && Math.abs(z - tz) < 0.8) o.push(28, 0); });
+      scene.add(box(1.5, 28, 1.5, red, tx, 14, tz));
+      for (const dx of [-30, -20, -10, 10, 20, 30]) {
+        if (tx + dx < x0 || tx + dx > x1) continue;
+        scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(tx, 27, tz), new THREE.Vector3(tx + dx, top + 1.2, bz + s * (w / 2))]), cableMat));
+      }
+    }
+    scene.add(box(1.2, 1.5, w + 3.3, red, tx, 26, bz));
+  }
+  platforms.push({ x0: x0 + 2, x1: x1 - 2, z0: bz - 3, z1: bz + 3, top });
+}
+
+// ---------- Train ----------
+// A train goes round an oval track all the time. Hit it and it falls over.
+const TRAIN = { x: -60, z: -40, half: 25, R: 18, speed: 10 };
+const TRAIN_LEN = 4 * TRAIN.half + 2 * Math.PI * TRAIN.R;
+function trainPoint(s) {
+  const { x: cx, z: cz, half, R } = TRAIN, L = 2 * half, C = Math.PI * R;
+  s = ((s % TRAIN_LEN) + TRAIN_LEN) % TRAIN_LEN;
+  if (s < L) return { x: cx + R, z: cz - half + s, yaw: 0 };
+  s -= L;
+  if (s < C) { const a = s / R; return { x: cx + R * Math.cos(a), z: cz + half + R * Math.sin(a), yaw: Math.atan2(-Math.sin(a), Math.cos(a)) }; }
+  s -= C;
+  if (s < L) return { x: cx - R, z: cz + half - s, yaw: Math.PI };
+  s -= L;
+  const a = Math.PI + s / R;
+  return { x: cx + R * Math.cos(a), z: cz - half + R * Math.sin(a), yaw: Math.atan2(-Math.sin(a), Math.cos(a)) };
+}
+const train = { s: 0, units: [], state: 'run', t: 0, toot: 0 };
+{
+  // Rails and sleepers
+  const n = Math.floor(TRAIN_LEN / 1.2);
+  const sleepers = new THREE.InstancedMesh(new THREE.BoxGeometry(2.6, 0.15, 0.4), lambert(0x6d4c41), n);
+  const rails = new THREE.InstancedMesh(new THREE.BoxGeometry(0.12, 0.15, 1.25), lambert(0x9e9e9e), n * 2);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), v = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1);
+  for (let i = 0; i < n; i++) {
+    const p = trainPoint(i * 1.2);
+    q.setFromAxisAngle(up, p.yaw);
+    sleepers.setMatrixAt(i, m.compose(v.set(p.x, 0.08, p.z), q, one));
+    for (const s of [-1, 1]) {
+      rails.setMatrixAt(i * 2 + (s + 1) / 2, m.compose(v.set(p.x + Math.cos(p.yaw) * s * 0.75, 0.2, p.z - Math.sin(p.yaw) * s * 0.75), q, one));
+    }
+  }
+  sleepers.receiveShadow = true;
+  scene.add(sleepers, rails);
+  // Engine and three wagons
+  const black = lambert(0x212121);
+  const wheelsFor = (g, zs) => {
+    for (const z of zs) for (const s of [-1, 1]) {
+      const wl = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.3, 16), lambert(0xb71c1c));
+      wl.rotation.z = Math.PI / 2; wl.position.set(s * 1.15, 0.6, z); g.add(wl);
+    }
+  };
+  const engine = () => {
+    const g = new THREE.Group();
+    g.add(box(2.4, 0.4, 6, black, 0, 1.0, 0));
+    const boiler = shade(new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 3.6, 18), lambert(0x2e7d32)));
+    boiler.rotation.x = Math.PI / 2; boiler.position.set(0, 2.1, 0.9); g.add(boiler);
+    g.add(box(2.4, 2.4, 1.9, lambert(0xc62828), 0, 2.4, -1.9));
+    g.add(box(2.7, 0.2, 2.2, black, 0, 3.7, -1.9));
+    const chimney = shade(new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 1.2, 12), black));
+    chimney.position.set(0, 3.4, 2.1); g.add(chimney);
+    g.add(box(2.2, 0.6, 0.5, lambert(0xfdd835), 0, 0.7, 3.1));
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.25, 10, 8), new THREE.MeshBasicMaterial({ color: 0xfff59d }));
+    lamp.position.set(0, 2.4, 2.75); g.add(lamp);
+    wheelsFor(g, [1.8, 0, -1.8]);
+    return { g, len: 6 };
+  };
+  const wagon = color => {
+    const g = new THREE.Group();
+    g.add(box(2.4, 0.3, 5, black, 0, 1.0, 0));
+    g.add(box(2.4, 1.5, 4.6, lambert(color), 0, 1.9, 0));
+    g.add(box(2.5, 0.15, 4.7, lambert(0xffffff), 0, 2.7, 0));
+    wheelsFor(g, [1.6, -1.6]);
+    return { g, len: 5 };
+  };
+  for (const u of [engine(), wagon(0xfdd835), wagon(0x1e88e5), wagon(0xff7043)]) {
+    const outer = new THREE.Group(), pivot = new THREE.Group();
+    pivot.add(u.g); outer.add(pivot); scene.add(outer);
+    train.units.push({ outer, pivot, model: u.g, len: u.len, dir: 1 });
+  }
+}
+function updateTrain(dt) {
+  if (train.state === 'run') train.s += TRAIN.speed * dt;
+  else {
+    train.t += dt;
+    train.units.forEach((u, i) => {
+      const k = clamp((train.t - i * 0.12) / 0.5, 0, 1);
+      u.pivot.rotation.z = -u.dir * k * Math.PI / 2;
+    });
+    if (train.t > 12) {
+      train.state = 'run';
+      for (const u of train.units) { u.pivot.rotation.z = 0; u.pivot.position.x = 0; u.model.position.x = 0; }
+    }
+  }
+  const feet = car.pos.y - RIDE;
+  let hit = false;
+  train.units.forEach((u, i) => {
+    if (train.state === 'run') {
+      const p = trainPoint(train.s - i * 6.5);
+      u.outer.position.set(p.x, 0, p.z);
+      u.outer.rotation.y = p.yaw;
+      // Car position in the frame of this wagon
+      const dx = car.pos.x - p.x, dz = car.pos.z - p.z;
+      const lx = dx * Math.cos(p.yaw) - dz * Math.sin(p.yaw), lz = dx * Math.sin(p.yaw) + dz * Math.cos(p.yaw);
+      if (!hit && feet < 3.5 && car.eatenT <= 0 && Math.abs(lx) < 2.4 && Math.abs(lz) < u.len / 2 + 1.5) hit = lx || 0.01;
+    }
+  });
+  if (hit) {
+    // Fall over away from the car, over the edge of the wheels
+    train.state = 'fall'; train.t = 0;
+    for (const u of train.units) {
+      u.dir = hit > 0 ? -1 : 1;
+      u.pivot.position.x = u.dir * 1.3; u.model.position.x = -u.dir * 1.3;
+    }
+    if (!car.air) car.speed *= -0.3;
+    sfx.crash(); sfx.toot(); addScore(300); popup('Comboio caiu! 🚂💥 +300', 'gold');
+  }
+  train.toot -= dt;
+  if (train.state === 'run' && train.toot <= 0 && Math.hypot(car.pos.x - train.units[0].outer.position.x, car.pos.z - train.units[0].outer.position.z) < 70) {
+    sfx.toot(); train.toot = 12;
+  }
+}
+
+// ---------- T-Rex ----------
+// Walks slowly after the car (or a ball or a tractor) and eats it.
+const rex = { pos: new THREE.Vector3(60, 0, 110), yaw: Math.PI, target: null, cool: 0, chomp: 0, phase: 0, think: 0, roared: false };
+{
+  const g = new THREE.Group(), green = lambert(0x4caf50), belly = lambert(0xc5e1a5), white = lambert(0xffffff);
+  const add = (geo, mat, x, y, z, parent = g) => { const m = shade(new THREE.Mesh(geo, mat)); m.position.set(x, y, z); parent.add(m); return m; };
+  const body = add(new THREE.SphereGeometry(2.2, 20, 14), green, 0, 4.2, 0); body.scale.set(1, 1, 1.6);
+  add(new THREE.SphereGeometry(1.6, 16, 12), belly, 0, 3.8, 1.2).scale.set(0.9, 1, 1.3);
+  const tail = add(new THREE.ConeGeometry(1.4, 6, 14), green, 0, 4.0, -5.6); tail.rotation.x = -Math.PI / 2 - 0.15;
+  const neck = add(new THREE.CylinderGeometry(0.9, 1.2, 2.2, 12), green, 0, 5.9, 2.6); neck.rotation.x = 0.7;
+  const head = new THREE.Group(); head.position.set(0, 6.8, 3.6); g.add(head);
+  add(new THREE.BoxGeometry(1.8, 1.2, 2.6), green, 0, 0.2, 0.8, head);
+  for (const s of [-1, 1]) {
+    add(new THREE.SphereGeometry(0.28, 10, 8), white, s * 0.75, 0.7, 0.6, head);
+    add(new THREE.SphereGeometry(0.14, 8, 6), lambert(0x111111), s * 0.83, 0.72, 0.75, head);
+    for (let i = 0; i < 4; i++) {
+      const tooth = add(new THREE.ConeGeometry(0.1, 0.3, 6), white, s * 0.75, -0.5, 0.3 + i * 0.5, head);
+      tooth.rotation.x = Math.PI;
+    }
+  }
+  const jaw = new THREE.Group(); jaw.position.set(0, -0.4, -0.3); head.add(jaw);
+  add(new THREE.BoxGeometry(1.6, 0.4, 2.4), green, 0, -0.1, 1.2, jaw);
+  add(new THREE.BoxGeometry(1.4, 0.1, 2.2), lambert(0xd84343), 0, 0.12, 1.2, jaw);
+  for (const s of [-1, 1]) {
+    const arm = add(new THREE.CylinderGeometry(0.18, 0.14, 1.2, 8), green, s * 1.1, 4.6, 2.4); arm.rotation.x = 1.0;
+  }
+  const legs = [];
+  for (const s of [-1, 1]) {
+    const hip = new THREE.Group(); hip.position.set(s * 1.3, 3.6, -0.3); g.add(hip);
+    add(new THREE.CylinderGeometry(0.75, 0.5, 2.6, 12), green, 0, -1.3, 0, hip);
+    add(new THREE.BoxGeometry(1.1, 0.5, 1.8), green, 0, -3.35, 0.4, hip);
+    legs.push(hip);
+  }
+  scene.add(g);
+  rex.g = g; rex.head = head; rex.jaw = jaw; rex.legs = legs;
+}
+function updateRex(dt) {
+  rex.cool -= dt; rex.think -= dt;
+  const feet = car.pos.y - RIDE;
+  const dCar = Math.hypot(car.pos.x - rex.pos.x, car.pos.z - rex.pos.z);
+  // Choose what to chase: the car when it is near, else the nearest ball or tractor
+  if (rex.think <= 0) {
+    rex.think = 1;
+    if (rex.cool <= 0 && car.eatenT <= 0 && dCar < 120 && feet < 8) {
+      if (rex.target !== 'car' && !rex.roared) { sfx.roar(); popup('🦖 ROAAAR! Foge!', 'red'); rex.roared = true; }
+      rex.target = 'car';
+    } else {
+      rex.roared = false;
+      let best = null, bd = 1e9;
+      for (const b of balls) if (!b.gone) { const d = Math.hypot(b.m.position.x - rex.pos.x, b.m.position.z - rex.pos.z); if (d < bd) { bd = d; best = { ball: b }; } }
+      for (const t of tractors) if (!t.gone && t.state === 0) { const d = Math.hypot(t.x - rex.pos.x, t.z - rex.pos.z); if (d < bd) { bd = d; best = { tractor: t }; } }
+      rex.target = best;
+    }
+  }
+  let tx = rex.pos.x, tz = rex.pos.z;
+  if (rex.target === 'car') { tx = car.pos.x; tz = car.pos.z; }
+  else if (rex.target && rex.target.ball) { tx = rex.target.ball.m.position.x; tz = rex.target.ball.m.position.z; }
+  else if (rex.target && rex.target.tractor) { tx = rex.target.tractor.x; tz = rex.target.tractor.z; }
+  const want = Math.atan2(tx - rex.pos.x, tz - rex.pos.z);
+  rex.yaw += clamp(wrap(want - rex.yaw), -1.2 * dt, 1.2 * dt);
+  const speed = rex.target === 'car' ? 7 : 4;          // slow: the cars are much faster
+  const nx = rex.pos.x + Math.sin(rex.yaw) * speed * dt, nz = rex.pos.z + Math.cos(rex.yaw) * speed * dt;
+  const fx = nx + Math.sin(rex.yaw) * 3, fz = nz + Math.cos(rex.yaw) * 3;
+  if (rex.target && !blocked(fx, fz, 0) && Math.abs(nx) < FIELD - 5 && Math.abs(nz) < FIELD - 5) {
+    rex.pos.x = nx; rex.pos.z = nz;
+    rex.phase += speed * dt * 0.9;
+  } else if (rex.target) {
+    rex.yaw += 1.5 * dt;                                  // walk round the obstacle
+  }
+  // Eat
+  if (rex.target === 'car' && dCar < 5 && feet < 6 && car.eatenT <= 0) {
+    car.eatenT = 2.5; truck.root.visible = false; rex.chomp = 0.8; rex.cool = 10; rex.target = null;
+    sfx.roar(); popup(`🦖 O T-Rex comeu o ${DRIVERS[driverId].name}!`, 'red');
+  }
+  for (const b of balls) if (!b.gone && Math.hypot(b.m.position.x - rex.pos.x, b.m.position.z - rex.pos.z) < 5) {
+    b.gone = 20; b.m.visible = false; rex.chomp = 0.8; sfx.pop();
+  }
+  for (const t of tractors) if (!t.gone && t.state === 0 && Math.hypot(t.x - rex.pos.x, t.z - rex.pos.z) < 5) {
+    t.gone = 15; t.g.visible = false; rex.chomp = 0.8; sfx.moo();
+  }
+  // Pose: walking legs, open and shut jaw
+  rex.g.position.set(rex.pos.x, Math.abs(Math.sin(rex.phase)) * 0.25, rex.pos.z);
+  rex.g.rotation.y = rex.yaw;
+  rex.legs[0].rotation.x = Math.sin(rex.phase) * 0.5;
+  rex.legs[1].rotation.x = -Math.sin(rex.phase) * 0.5;
+  rex.chomp = Math.max(0, rex.chomp - dt);
+  rex.jaw.rotation.x = rex.chomp > 0 ? Math.abs(Math.sin(rex.chomp * 12)) * 0.6 : 0.08;
 }
 
 // Ramps and cushions on the grass
@@ -1367,22 +1623,99 @@ function buildMater() {
   return { root, ...wheels, wheelR: 0.42, flames: [] };
 }
 
+// ---------- Drivers ----------
+const DRIVERS = {
+  luca: { name: 'Luca', note: '5 anos', hair: 0x3b2618, hairCss: '#3b2618', shirt: 0x1e88e5, scale: 1.0, head: 0.2 },
+  fred: { name: 'Fred', note: '2 anos', hair: 0xf2d16b, hairCss: '#f2d16b', shirt: 0xe53935, scale: 0.78, head: 0.23, tufts: true }
+};
+const DRIVER_IDS = Object.keys(DRIVERS);
+let driverId = 'luca';
+// A child from the waist up (legs when seated in the open). Arms hang from shoulder pivots.
+function buildDriver(d, legs) {
+  const g = new THREE.Group();
+  const skin = lambert(0xf1c7a5), shirt = lambert(d.shirt), hair = lambert(d.hair), dark = lambert(0x111111);
+  const torso = shade(new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.22, 0.45, 14), shirt));
+  torso.position.y = 0.225;
+  const hy = 0.45 + d.head * 0.95;
+  const head = shade(new THREE.Mesh(new THREE.SphereGeometry(d.head, 18, 14), skin));
+  head.position.y = hy;
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(d.head * 1.08, 18, 12, 0, TAU, 0, Math.PI * 0.5), hair);
+  cap.position.y = hy; cap.rotation.x = -0.3;
+  g.add(torso, head, cap);
+  if (d.tufts) for (const [x, z] of [[-0.06, 0.05], [0.05, 0.08], [0, -0.04]]) {
+    const t = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), hair);
+    t.position.set(x, hy + d.head * 1.02, z); g.add(t);
+  }
+  for (const s of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), dark);
+    eye.position.set(s * 0.07, hy + 0.02, d.head * 0.93); g.add(eye);
+  }
+  const smile = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.015, 0.01), lambert(0xc62828));
+  smile.position.set(0, hy - 0.07, d.head * 0.92); g.add(smile);
+  const arms = [];
+  for (const s of [-1, 1]) {
+    const pivot = new THREE.Group();
+    pivot.position.set(s * 0.2, 0.4, 0);
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.35, 8), shirt);
+    arm.position.y = -0.175;
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), skin);
+    hand.position.y = -0.35;
+    pivot.add(arm, hand); pivot.rotation.x = -1.3;      // hands to the front
+    g.add(pivot); arms.push(pivot);
+  }
+  if (legs) for (const s of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.45, 8), lambert(0x3949ab));
+    leg.rotation.x = Math.PI / 2; leg.position.set(s * 0.1, 0.05, 0.22); g.add(leg);
+  }
+  g.scale.setScalar(d.scale);
+  return { g, wave: arms[0] };
+}
+// Put the driver in the car: through a roof hatch, in the open seat, or sitting on top
+function addDriver() {
+  const seat = def.seat, vis = truck.root.children[0];
+  const { g, wave } = buildDriver(DRIVERS[driverId], seat.legs);
+  g.position.set(seat.x, seat.y, seat.z);
+  vis.add(g);
+  if (seat.hatch) {
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.06, 20), lambert(0x111111));
+    ring.position.set(seat.x, seat.hatch, seat.z); vis.add(ring);
+  }
+  if (seat.wheel) {
+    const sw = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.03, 8, 20), lambert(0x111111));
+    sw.position.set(seat.x, seat.y + 0.4, seat.z + 0.38); sw.rotation.x = -0.5; vis.add(sw);
+  }
+  truck.driver = { g, wave, wheel: !!seat.wheel };
+}
+function setDriver(id) {
+  driverId = id;
+  setCar(carId);
+  document.querySelectorAll('.drvbtn').forEach(b => b.classList.toggle('on', b.dataset.id === id));
+}
+
 // jump: upward speed (m/s) when Space is pressed on the ground
 // horn: what the H key does. reverse: top speed backwards.
+// seat: where the driver goes (hatch: roof height for a hatch ring; wheel: steering wheel; legs: seated in the open)
 const CARS = {
   cyber: { name: 'Cybertruck', note: 'forte e grande', color: '#78909c', build: buildCybertruck,
+    seat: { x: 0, y: 1.55, z: -0.3, hatch: 1.79 },
     max: 30, turbo: 42, accel: 20, turn: 2.0, jump: 7.5, hitR: 2.7 },
   roadster: { name: 'Roadster', note: 'rápido e com jatos 🚀', color: '#e53935', build: buildRoadster,
+    seat: { x: 0, y: 1.0, z: -0.45, hatch: 1.21 },
     max: 36, turbo: 48, accel: 26, turn: 2.3, jump: 7.5, hitR: 2.3, jets: true },
   camper: { name: 'Autocaravana', note: 'casa com rodas 🏕️', color: '#3949ab', build: buildCamper,
+    seat: { x: 0, y: 2.85, z: 0.8, hatch: 3.07 },
     max: 24, turbo: 34, accel: 14, turn: 1.7, jump: 6, hitR: 3.2 },
   police: { name: 'Polícia', note: 'sirene: tecla H 🚨', color: '#263238', build: buildPolice,
+    seat: { x: 0, y: 2.35, z: -0.8, hatch: 2.56 },
     max: 32, turbo: 44, accel: 22, turn: 2.0, jump: 7.5, hitR: 2.7, horn: 'siren' },
   bronco: { name: 'Bronco', note: 'super salto 🦘', color: '#546e7a', build: buildBronco,
+    seat: { x: 0.45, y: 1.38, z: -0.15, wheel: true },
     max: 30, turbo: 40, accel: 22, turn: 2.2, jump: 11, hitR: 2.6 },
   mcqueen: { name: 'Faísca McQueen', note: 'o mais rápido ⚡ H: Ka-chow!', color: '#d7141a', build: buildMcQueen,
+    seat: { x: 0, y: 1.3, z: -0.45, legs: true },
     max: 40, turbo: 52, accel: 30, turn: 2.4, jump: 7.5, hitR: 2.4, horn: 'kachow' },
   mater: { name: 'Mate', note: 'rei da marcha-atrás 🔙 H: buzina', color: '#8a5a33', build: buildMater,
+    seat: { x: 0, y: 1.0, z: -1.75, legs: true },
     max: 26, turbo: 36, accel: 18, turn: 2.1, jump: 7.5, hitR: 2.7, horn: 'honk', reverse: 28 }
 };
 const CAR_IDS = Object.keys(CARS);
@@ -1392,6 +1725,7 @@ function setCar(id) {
   carId = id; def = CARS[id];
   truck = def.build();
   scene.add(truck.root);
+  addDriver();
   document.getElementById('fuel').style.display = def.jets ? 'block' : 'none';
   document.getElementById('fuelLabel').style.display = def.jets ? 'block' : 'none';
   sirenOn = false;
@@ -1405,7 +1739,7 @@ const car = {
   speed: 0, vy: 0, yaw: 0, pitch: 0, roll: 0, steer: 0,
   air: false, airTime: 0, maxH: 0,
   pitchRate: 0, yawRate: 0, rollRate: 0, pitchAcc: 0, yawAcc: 0, rollAcc: 0,
-  balloonsInAir: 0, crashT: 0, onPad: false, wheelSpeed: 0, fuel: FUEL, jetOn: false
+  balloonsInAir: 0, crashT: 0, onPad: false, wheelSpeed: 0, fuel: FUEL, jetOn: false, eatenT: 0
 };
 
 // ---------- Balloons ----------
@@ -1561,6 +1895,8 @@ const sfx = {
   kachow() { this.noise(0.06, 0.4, 3000); [1320, 1760, 2093].forEach((f, i) => setTimeout(() => this.tone(f, f * 1.02, 0.2, 'triangle', 0.15), i * 60)); },
   honk() { this.tone(330, 320, 0.35, 'square', 0.08); this.tone(415, 405, 0.35, 'square', 0.08); },
   moo() { this.tone(170, 105, 0.8, 'sawtooth', 0.12); },
+  toot() { this.tone(440, 430, 0.6, 'triangle', 0.18); this.tone(554, 545, 0.6, 'triangle', 0.14); },
+  roar() { this.noise(1.2, 0.6, 250); this.tone(110, 55, 1.2, 'sawtooth', 0.2); },
   // Police siren: a tone that goes up and down (wee-woo)
   siren(on) {
     if (!this.ctx) return;
@@ -1658,6 +1994,10 @@ addEventListener('keydown', e => {
     setCar(CAR_IDS[(CAR_IDS.indexOf(carId) + 1) % CAR_IDS.length]);
     popup(def.name, 'blue');
   }
+  if (e.code === 'KeyD' && started) {
+    setDriver(DRIVER_IDS[(DRIVER_IDS.indexOf(driverId) + 1) % DRIVER_IDS.length]);
+    popup(DRIVERS[driverId].name + '!', 'blue');
+  }
   if (e.code === 'KeyH') {
     if (def.horn === 'siren') { sirenOn = !sirenOn; sfx.siren(sirenOn); }
     if (def.horn === 'kachow') { popup('Ka-chow! ⚡', 'gold'); sfx.kachow(); }
@@ -1671,6 +2011,14 @@ const kDown = () => k('ArrowDown') || k('KeyS');
 const kLeft = () => k('ArrowLeft') || k('KeyA');
 const kRight = () => k('ArrowRight') || k('KeyD');
 
+for (const id of DRIVER_IDS) {
+  const d = DRIVERS[id], btn = document.createElement('button');
+  btn.className = 'drvbtn' + (id === driverId ? ' on' : '');
+  btn.dataset.id = id;
+  btn.innerHTML = `<div class="face" style="border-top-color:${d.hairCss}"></div><div>${d.name}<small>${d.note}</small></div>`;
+  btn.addEventListener('click', () => setDriver(id));
+  document.getElementById('driverList').appendChild(btn);
+}
 for (const id of CAR_IDS) {
   const c = CARS[id], btn = document.createElement('button');
   btn.className = 'carbtn';
@@ -1860,6 +2208,7 @@ function land(s) {
   pts *= mult;
   lines.forEach((l, i) => setTimeout(() => popup(l), i * 160));
   setTimeout(() => { popup('+' + fmt(pts), 'big'); sfx.points(); }, lines.length * 160);
+  if (pts >= 600) setTimeout(() => popup(`Boa, ${DRIVERS[driverId].name}! 🎉`, 'gold'), lines.length * 160 + 300);
   addScore(pts);
 }
 
@@ -1903,6 +2252,11 @@ const rollAxis = new THREE.Vector3();
 function updateBalls(dt) {
   const feet = car.pos.y - RIDE;
   for (const b of balls) {
+    if (b.gone > 0) {
+      b.gone -= dt;
+      if (b.gone <= 0) { b.gone = 0; b.m.visible = true; b.m.position.set(b.home[0], b.r, b.home[1]); b.vel.set(0, 0, 0); }
+      continue;
+    }
     b.cool -= dt;
     const p = b.m.position, reach = b.r + 1.7;
     const dx = p.x - car.pos.x, dz = p.z - car.pos.z, d = Math.hypot(dx, dz);
@@ -1933,6 +2287,7 @@ function updateBalls(dt) {
 function updateTractors(dt) {
   const feet = car.pos.y - RIDE;
   for (const tr of tractors) {
+    if (tr.gone > 0) { tr.gone -= dt; if (tr.gone <= 0) { tr.gone = 0; tr.g.visible = true; } continue; }
     if (tr.state === 0) {
       const dx = tr.x - car.pos.x, dz = tr.z - car.pos.z;
       if (feet < 3 && Math.hypot(dx, dz) < 2.8) {
@@ -1972,6 +2327,8 @@ function updateLap() {
 // ---------- Main loop ----------
 setCar('cyber');
 setPlanet(2);
+updateTrain(0);
+updateRex(0);
 const clock = new THREE.Clock();
 let time = 0, camYaw = 0;
 camera.position.set(0, 5, -12);
@@ -1982,8 +2339,21 @@ function loop() {
 
   if (started && !menuOpen) {
     const n = Math.max(1, Math.ceil(dt / 0.01));     // small steps keep the physics steady
-    for (let i = 0; i < n; i++) { if (car.air) updateAir(dt / n); else updateGround(dt / n); }
+    if (car.eatenT > 0) {
+      car.eatenT -= dt;
+      if (car.eatenT <= 0) {
+        car.eatenT = 0;
+        car.pos.set(0, RIDE, 0); car.yaw = 0; car.speed = 0; car.vy = 0; car.air = false;
+        car.vel.set(0, 0, 0); car.pitch = 0; car.roll = 0; car.crashT = 0; camYaw = 0;
+        truck.root.visible = true;
+        popup('De volta à partida!', 'blue');
+      }
+    } else {
+      for (let i = 0; i < n; i++) { if (car.air) updateAir(dt / n); else updateGround(dt / n); }
+    }
     updateBalls(dt);
+    updateTrain(dt);
+    updateRex(dt);
     updateTractors(dt);
     updateLap();
   }
@@ -1993,6 +2363,10 @@ function loop() {
   truck.root.rotation.set(car.pitch, car.yaw, car.roll, 'YXZ');
   for (const p of truck.steerPivots) p.rotation.y = car.steer * 0.45;
   for (const s of truck.spinners) s.rotation.x += car.wheelSpeed / truck.wheelR * dt;
+  if (truck.driver) {              // wave when in the air or stopped
+    const waving = !truck.driver.wheel && (car.air || Math.abs(car.speed) < 2);
+    truck.driver.wave.rotation.set(waving ? 0 : -1.3, 0, waving ? -2.6 + 0.35 * Math.sin(time * 9) : 0);
+  }
   if (truck.beacons) {
     const on = Math.floor(time * 6) % 2;
     truck.beacons.forEach((b, i) => b.material.color.setHex((i === on) ? 0x4d8dff : 0x0a1a4a));
@@ -2045,8 +2419,12 @@ function loop() {
   // HUD
   shownScore += (score - shownScore) * Math.min(1, dt * 6);
   scoreEl.textContent = fmt(shownScore);
-  infoEl.textContent = `${def.name} · ${planet.name} · ${Math.round(spd * 3.6)} km/h · 🎈 ${popped} · Recorde ${fmt(best)}` +
+  infoEl.textContent = `${DRIVERS[driverId].name} · ${def.name} · ${planet.name} · ${Math.round(spd * 3.6)} km/h · 🎈 ${popped} · Recorde ${fmt(best)}` +
     (lap.best !== null ? ` · 🏁 ${lap.best.toFixed(1).replace('.', ',')} s` : '');
+  if (rex.target === 'car') {
+    const d = Math.hypot(car.pos.x - rex.pos.x, car.pos.z - rex.pos.z);
+    if (d < 60) infoEl.textContent += ` · 🦖 a ${Math.round(d)} m!`;
+  }
   if (def.jets) fuelEl.style.width = (car.fuel / FUEL * 100) + '%';
   if (car.air && car.airTime > 0.3) {
     const { flips, spins, rolls } = trickCounts();
