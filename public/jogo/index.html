@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Saltos e Balões</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #8fd3ff;
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -35,10 +35,9 @@
   }
   #help { position: fixed; bottom: 10px; left: 0; right: 0; text-align: center; font-size: 14px;
     font-weight: 700; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.7); pointer-events: none; padding: 0 16px; }
-  #start { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-    background: rgba(0,40,80,.45); overflow: auto; }
+  #start { position: fixed; inset: 0; display: flex; background: rgba(0,40,80,.45); overflow: auto; }
   .card { background: #fff; border-radius: 22px; padding: 24px 32px; max-width: 600px; text-align: center;
-    box-shadow: 0 10px 40px rgba(0,0,0,.3); margin: 16px; }
+    box-shadow: 0 10px 40px rgba(0,0,0,.3); margin: auto; }
   .card h1 { margin: 0 0 6px; font-size: 42px; color: #ff4081; }
   .card p { font-size: 17px; color: #333; line-height: 1.4; margin: 6px 0; }
   .card table { margin: 6px auto; font-size: 13px; color: #333; text-align: left; border-collapse: collapse; }
@@ -55,7 +54,55 @@
   .drvbtn.on { border-color: #00c853; background: #e8f5e9; }
   .face { width: 38px; height: 38px; border-radius: 50%; background: #f1c7a5; box-sizing: border-box; border-top: 13px solid; }
   .carbtn:active { transform: translateY(3px); box-shadow: none; }
-  #planets { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+  /* Touch controls (phones and tablets) */
+  #touch { display: none; position: fixed; inset: 0; pointer-events: none; }
+  body.touch #touch { display: block; }
+  body.touch #help { display: none; }
+  body.touch canvas { touch-action: none; }
+  #touch button { pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none;
+    -webkit-touch-callout: none; border: 3px solid rgba(255,255,255,.85); background: rgba(0,0,0,.28); color: #fff;
+    border-radius: 50%; width: 72px; height: 72px; font-size: 28px; font-weight: 900; margin: 6px; }
+  #touch button.on { background: rgba(255,255,255,.45); }
+  #touch .pad { position: absolute; bottom: calc(14px + env(safe-area-inset-bottom)); display: flex; align-items: flex-end; }
+  #touch .pad.left { left: calc(10px + env(safe-area-inset-left)); }
+  #touch .pad.right { right: calc(10px + env(safe-area-inset-right)); flex-direction: column; align-items: flex-end; }
+  #touch .row { display: flex; align-items: flex-end; }
+  #touch .small { width: 56px; height: 56px; font-size: 22px; }
+  #touch .go { width: 86px; height: 86px; background: rgba(0,200,83,.45); }
+  #touch .bar { position: absolute; top: calc(8px + env(safe-area-inset-top)); right: calc(8px + env(safe-area-inset-right)); display: flex; flex-wrap: wrap; justify-content: flex-end; max-width: 50vw; }
+  #touch .bar button { width: 44px; height: 44px; font-size: 20px; margin: 3px; border-width: 2px; }
+  #touch .dig { display: none; }
+  body.digger #touch .dig { display: inline-block; }
+  .touchhint { display: none; }
+  body.touch .card table, body.touch .keyhint { display: none; }
+  body.touch .touchhint { display: block; }
+  @media (max-width: 760px), (max-height: 500px) {
+    #score { font-size: 32px; }
+    #info { font-size: 12px; max-width: 55vw; }
+    #fuel { width: 140px; height: 12px; }
+    #airbox { font-size: 15px; top: 110px; }
+    .pop { font-size: 22px; }
+    .pop.big { font-size: 34px; }
+    .pop.gold { font-size: 26px; }
+    #popups { top: 18%; }
+    .card { padding: 14px 16px; }
+    .card h1 { font-size: 28px; }
+    .card p { font-size: 14px; }
+    .carbtn { font-size: 16px; padding: 8px 14px; }
+    .carbtn small { font-size: 11px; }
+    .drvbtn { font-size: 16px; padding: 6px 14px; }
+    #planets h2 { font-size: 24px; }
+    .plist { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+    .pbtn { font-size: 14px; padding: 6px; }
+    .pbtn .dot { width: 32px; height: 32px; }
+  }
+  @media (max-height: 500px) {
+    #touch button { width: 58px; height: 58px; font-size: 22px; margin: 4px; }
+    #touch .small { width: 46px; height: 46px; font-size: 18px; }
+    #touch .go { width: 70px; height: 70px; }
+  }
+  #planets .card { margin: auto; }
+  #planets { position: fixed; inset: 0; display: none;
     background: rgba(0,0,30,.6); overflow: auto; }
   #planets h2 { margin: 0 0 12px; font-size: 34px; color: #3949ab; }
   .plist { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
@@ -73,7 +120,21 @@
 </div>
 <div id="airbox" class="shadow"></div>
 <div id="popups"></div>
-<div id="help">↑ ↓ acelerar / travar · ← → virar · Espaço saltar (Roadster: segura para os jatos) · Shift turbo · T disparar · No ar: ↑ ↓ mortal · ← → pião · Q / E pirueta · R endireitar · C trocar de carro · D condutor · H buzina / sirene / Ka-chow · P planeta · M som</div>
+<div id="touch">
+  <div class="bar">
+    <button data-tap="KeyC">🚗</button><button data-tap="KeyD">👦</button><button data-tap="KeyP">🪐</button>
+    <button data-tap="KeyH">📣</button><button data-tap="KeyR">🔄</button><button data-tap="KeyM">🔊</button>
+  </div>
+  <div class="pad left"><button data-hold="ArrowLeft">◀</button><button data-hold="ArrowRight">▶</button></div>
+  <div class="pad right">
+    <div class="row">
+      <button class="small dig" data-hold="KeyE">⛏️</button><button class="small" data-hold="KeyT">🔫</button>
+      <button class="small" data-hold="ShiftLeft">🔥</button><button class="small" data-hold="Space">⤒</button>
+    </div>
+    <div class="row"><button data-hold="ArrowDown">▼</button><button class="go" data-hold="ArrowUp">▲</button></div>
+  </div>
+</div>
+<div id="help">↑ ↓ acelerar / travar · ← → virar · Espaço saltar (Roadster: segura para os jatos) · Shift turbo · T disparar · E escavar · No ar: ↑ ↓ mortal · ← → pião · Q / E pirueta · R endireitar · C trocar de carro · D condutor · H buzina / sirene / Ka-chow · P planeta · M som</div>
 <div id="planets">
   <div class="card">
     <h2>Escolhe o planeta</h2>
@@ -91,7 +152,8 @@
       <tr><td>Espaço</td><td>saltar</td></tr>
       <tr><td>Espaço (segurar)</td><td>jatos do Roadster, no ar</td></tr>
       <tr><td>Shift</td><td>turbo</td></tr>
-      <tr><td>T</td><td>disparar (balões, T-Rex, comboio)</td></tr>
+      <tr><td>T</td><td>disparar (balões, T-Rex, comboio, foguetão)</td></tr>
+      <tr><td>E</td><td>escavadora: destruir</td></tr>
       <tr><td>No ar ↑ ↓</td><td>mortal para a frente / para trás</td></tr>
       <tr><td>No ar ← →</td><td>pião</td></tr>
       <tr><td>No ar Q / E</td><td>pirueta</td></tr>
@@ -100,6 +162,7 @@
       <tr><td>H</td><td>sirene, buzina ou Ka-chow!</td></tr>
       <tr><td>P</td><td>escolher o planeta</td></tr>
     </table>
+    <p class="touchhint">◀ ▶ virar · ▲ acelerar · ▼ travar · ⤒ saltar · 🔥 turbo · 🔫 disparar. No ar, ▲ ▼ ◀ ▶ fazem acrobacias. Em cima: 🚗 carro, 👦 condutor, 🪐 planeta.</p>
     <p>Atenção: tens de aterrar com as rodas no chão!</p>
     <p><b>Escolhe o condutor:</b></p>
     <div class="cars" id="driverList"></div>
@@ -130,7 +193,8 @@ scene.background = new THREE.Color(0x8fd3ff);
 scene.fog = new THREE.Fog(0x8fd3ff, 180, 520);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+renderer.setPixelRatio(Math.min(devicePixelRatio, TOUCH ? 1.5 : 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -321,6 +385,13 @@ function topAt(x, z) {
   return best;
 }
 const shade = o => { o.castShadow = true; o.receiveShadow = true; return o; };
+// Things the digger can break. They come back after 30 s.
+const breakables = [];
+function addBreakable(x, z, r, color) {
+  const b = { x, z, r, color, meshes: [], alive: true, t: 0 };
+  breakables.push(b);
+  return b;
+}
 
 // Inflatable block (box) with puffy tubes on the top edges
 const platforms = [];
@@ -562,16 +633,17 @@ function blockTex(letter, color) {
   }));
 }
 const BLOCK_COLORS = ['#e53935', '#1e88e5', '#43a047', '#f9a825', '#8e24aa', '#fb8c00'];
-function addToyBlock(cx, cz, s, bottom) {
+function addToyBlock(cx, cz, s, bottom, breakable = false) {
   const x0 = cx - s / 2, x1 = cx + s / 2, z0 = cz - s / 2, z1 = cz + s / 2, top = bottom + s, e = 0.02;
+  const br = breakable ? addBreakable(cx, cz, s / 2, 0xf4e9d0) : null;
   // e: blocks side by side overlap a little, so the car does not fall in the seam
-  solids.push((x, z, o) => { if (x > x0 - e && x < x1 + e && z > z0 - e && z < z1 + e) o.push(top, bottom); });
+  solids.push((x, z, o) => { if ((!br || br.alive) && x > x0 - e && x < x1 + e && z > z0 - e && z < z1 + e) o.push(top, bottom); });
   const letter = String.fromCharCode(65 + Math.floor(Math.random() * 26));
   const m = shade(new THREE.Mesh(new THREE.BoxGeometry(s, s, s),
     new THREE.MeshLambertMaterial({ map: blockTex(letter, pick(BLOCK_COLORS)) })));
   m.position.set(cx, bottom + s / 2, cz);
   scene.add(m);
-  platforms.push({ x0, x1, z0, z1, top });
+  if (br) br.meshes.push(m); else platforms.push({ x0, x1, z0, z1, top });
 }
 {
   const s = 5;
@@ -584,7 +656,7 @@ function addToyBlock(cx, cz, s, bottom) {
   addRamp({ x: 160, z: -42.5, rot: Math.PI / 2, L: 10, W: 5, H: 5, base: 5, kicker: false, side: 0xe53935, top: 0x43a047 });
   addPad(167.5, -42.5, 2.2, 10);
   // Loose blocks on the grass
-  for (const [x, z] of [[120, -20], [126, -20], [123, -20], [-40, 20], [-46, 20], [-43, 25]]) addToyBlock(x, z, 3, 0);
+  for (const [x, z] of [[120, -20], [126, -20], [123, -20], [-40, 20], [-46, 20], [-43, 25]]) addToyBlock(x, z, 3, 0, true);
 }
 
 // Potato head figure (hat is solid: you can land on it)
@@ -895,11 +967,12 @@ const inTunnel = (x, z) => Math.abs(x - TRACK.tunnelX) < 4 && z > TRACK.z;
     const a = -Math.PI / 2 + k * Math.PI / 8, r = ri - 2;
     for (const side of [-1, 1]) {
       const sx = tx + side * (half + Math.cos(a) * r), sz = tz - Math.sin(a) * r;
-      solids.push((x, z, o) => { if (Math.hypot(x - sx, z - sz) < 1.3) o.push(2.4, 0); });
+      const br = addBreakable(sx, sz, 1.3, 0x1c1c1c);
+      solids.push((x, z, o) => { if (br.alive && Math.hypot(x - sx, z - sz) < 1.3) o.push(2.4, 0); });
       for (let i = 0; i < 3; i++) {
         const t = new THREE.Mesh(tyreGeo, i === 2 ? wallMat : tyreMat);
         t.rotation.x = Math.PI / 2; t.position.set(sx, 0.4 + i * 0.8, sz); t.castShadow = true;
-        scene.add(t);
+        scene.add(t); br.meshes.push(t);
       }
     }
   }
@@ -942,14 +1015,15 @@ function addTractor(x, z, yaw) {
 // Motel of giant orange cones
 for (let i = 0; i < 5; i++) {
   const cx = 80 + i * 20, cz = 178;
-  solids.push((x, z, o) => { if (Math.hypot(x - cx, z - cz) < 4.2) o.push(11, 0); });
+  const br = addBreakable(cx, cz, 4.2, 0xff7a1a);
+  solids.push((x, z, o) => { if (br.alive && Math.hypot(x - cx, z - cz) < 4.2) o.push(11, 0); });
   const cone = shade(new THREE.Mesh(new THREE.ConeGeometry(5, 12, 32), lambert(0xff7a1a)));
   cone.position.set(cx, 6, cz);
   const band = new THREE.Mesh(new THREE.CylinderGeometry(5 * (1 - 7.2 / 12) * 1.02, 5 * 0.5 * 1.02, 1.2, 32), lambert(0xffffff));
   band.position.set(cx, 6.6, cz);
   const door = box(1.6, 3, 0.3, lambert(0x5d4037), cx, 1.5, cz - 4.25);
   const win = box(1.2, 0.9, 0.2, lambert(0xfff59d), cx, 4.2, cz - 3.4);
-  scene.add(cone, band, door, win);
+  scene.add(cone, band, door, win); br.meshes.push(cone, band, door, win);
 }
 
 // Red rock butte in a patch of desert, with a ramp up and a kicker on top
@@ -968,12 +1042,13 @@ for (let i = 0; i < 5; i++) {
   const cactusMat = lambert(0x2e7d32);
   for (const a of [0.5, 1.4, 2.4, 3.4, 4.2, 5.6]) {
     const cx = mx + Math.cos(a) * 32, cz = mz + Math.sin(a) * 32;
-    solids.push((x, z, o) => { if (Math.hypot(x - cx, z - cz) < 0.8) o.push(5, 0); });
+    const br = addBreakable(cx, cz, 0.8, 0x2e7d32);
+    solids.push((x, z, o) => { if (br.alive && Math.hypot(x - cx, z - cz) < 0.8) o.push(5, 0); });
     const trunk = shade(new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.7, 5, 10), cactusMat));
     trunk.position.set(cx, 2.5, cz);
     const arm = shade(new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 2, 8), cactusMat));
     arm.position.set(cx + 0.9, 3, cz);
-    scene.add(trunk, arm);
+    scene.add(trunk, arm); br.meshes.push(trunk, arm);
   }
 }
 
@@ -1240,6 +1315,193 @@ function updateRex(dt) {
   rex.jaw.rotation.x = rex.chomp > 0 ? Math.abs(Math.sin(rex.chomp * 12)) * 0.6 : 0.08;
 }
 
+// ---------- Rocket ----------
+// Touch it or shoot it: count down 3, 2, 1, then it flies to space. Back on the pad after 25 s.
+const rocket = { x: -115, z: 165, state: 'pad', t: 0, y: 0, vy: 0 };
+const puffs = [];
+{
+  const { x, z } = rocket;
+  solids.push((qx, qz, o) => { if (rocket.state !== 'fly' && Math.hypot(qx - x, qz - z) < 2.6) o.push(18.6, 0); });
+  const base = shade(new THREE.Mesh(new THREE.CylinderGeometry(6, 6.5, 0.6, 32), lambert(0x9e9e9e)));
+  base.position.set(x, 0.3, z);
+  const tower = box(1.2, 22, 1.2, lambert(0xc62828), x + 5, 11, z);
+  const armT = box(3, 0.5, 0.6, lambert(0xc62828), x + 3.3, 15, z);
+  scene.add(base, tower, armT);
+  const g = new THREE.Group(), white = lambert(0xf5f5f5), red = lambert(0xd32f2f);
+  const body = shade(new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 14, 24), white)); body.position.y = 7.6;
+  const nose = shade(new THREE.Mesh(new THREE.ConeGeometry(2, 4, 24), red)); nose.position.y = 16.6;
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(2.02, 2.02, 1, 24), red); band.position.y = 4.5;
+  const win = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.2, 20), lambert(0x4fc3f7));
+  win.rotation.x = Math.PI / 2; win.position.set(0, 11, 2.0);
+  g.add(body, nose, band, win);
+  for (let i = 0; i < 4; i++) {
+    const fin = shade(new THREE.Mesh(new THREE.BoxGeometry(0.25, 3.5, 2.2), red));
+    const a = i * Math.PI / 2;
+    fin.position.set(Math.cos(a) * 2.4, 2.4, Math.sin(a) * 2.4); fin.rotation.y = -a;
+    g.add(fin);
+  }
+  const flame = new THREE.Group();
+  const fo = new THREE.Mesh(new THREE.ConeGeometry(1.6, 6, 16), new THREE.MeshBasicMaterial({ color: 0xff6d00 }));
+  const fi = new THREE.Mesh(new THREE.ConeGeometry(0.9, 3.5, 12), new THREE.MeshBasicMaterial({ color: 0xfff59d }));
+  fo.position.y = -3; fi.position.y = -1.75;
+  flame.add(fo, fi); flame.rotation.x = Math.PI; flame.position.y = 0.6; flame.visible = false;
+  g.add(flame);
+  g.position.set(x, 0.6, z);
+  scene.add(g);
+  rocket.g = g; rocket.flame = flame;
+}
+const puffGeo = new THREE.SphereGeometry(1, 10, 8);
+function addPuff(x, y, z) {
+  const m = new THREE.Mesh(puffGeo, new THREE.MeshLambertMaterial({ color: 0xdddddd, transparent: true, opacity: 0.8 }));
+  m.position.set(x + rand(-1.5, 1.5), y, z + rand(-1.5, 1.5));
+  scene.add(m);
+  puffs.push({ m, life: 2.5, grow: rand(1.5, 3) });
+}
+function launchRocket() {
+  if (rocket.state !== 'pad') return;
+  rocket.state = 'count'; rocket.t = 3;
+  popup('3…', 'big'); sfx.points();
+  setTimeout(() => { popup('2…', 'big'); sfx.points(); }, 1000);
+  setTimeout(() => { popup('1…', 'big'); sfx.points(); }, 2000);
+}
+function updateRocket(dt) {
+  const r = rocket;
+  if (r.state === 'pad' && car.eatenT <= 0 && Math.hypot(car.pos.x - r.x, car.pos.z - r.z) < 4.6 && car.pos.y - RIDE < 18) launchRocket();
+  if (r.state === 'count') {
+    r.t -= dt;
+    if (Math.random() < dt * 20) addPuff(r.x, 0.8, r.z);
+    r.flame.visible = r.t < 0.8;
+    if (r.t <= 0) {
+      r.state = 'fly'; r.vy = 2; r.t = 25;
+      popup('🚀 Descolar! +500', 'gold'); addScore(500); sfx.roar();
+    }
+  } else if (r.state === 'fly') {
+    r.vy = Math.min(90, r.vy + 9 * dt);
+    r.y += r.vy * dt;
+    r.t -= dt;
+    if (r.y < 300 && Math.random() < dt * 30) addPuff(r.x, r.y + 0.5, r.z);
+    r.flame.visible = r.y < 900;
+    if (r.t <= 0) { r.state = 'pad'; r.y = 0; r.vy = 0; r.flame.visible = false; }
+  }
+  r.g.position.y = 0.6 + r.y;
+  r.g.visible = r.y < 900;
+  if (r.flame.visible) r.flame.scale.set(1, 0.8 + Math.random() * 0.5, 1);
+  for (let i = puffs.length - 1; i >= 0; i--) {
+    const p = puffs[i];
+    p.life -= dt;
+    p.m.scale.addScalar(p.grow * dt);
+    p.m.material.opacity = Math.max(0, p.life / 2.5 * 0.8);
+    if (p.life <= 0) { scene.remove(p.m); p.m.material.dispose(); puffs.splice(i, 1); }
+  }
+}
+
+// ---------- Double-decker bus ----------
+// Drives all the time round a big loop: east side, over the bridge, west side, north side.
+function buildLoop(corners, r) {
+  const pts = [];
+  const n = corners.length;
+  for (let i = 0; i < n; i++) {
+    const a = corners[(i + n - 1) % n], c = corners[i], b = corners[(i + 1) % n];
+    const da = Math.hypot(c[0] - a[0], c[1] - a[1]), db = Math.hypot(b[0] - c[0], b[1] - c[1]);
+    const p0 = [c[0] + (a[0] - c[0]) / da * r, c[1] + (a[1] - c[1]) / da * r];
+    const p2 = [c[0] + (b[0] - c[0]) / db * r, c[1] + (b[1] - c[1]) / db * r];
+    for (let k = 0; k <= 8; k++) {
+      const t = k / 8, u = 1 - t;
+      pts.push([u * u * p0[0] + 2 * u * t * c[0] + t * t * p2[0], u * u * p0[1] + 2 * u * t * c[1] + t * t * p2[1]]);
+    }
+  }
+  pts.push(pts[0]);
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  return { pts, cum, len: cum[cum.length - 1] };
+}
+const BUS_LOOP = buildLoop([[190, 190], [190, -32], [-190, -32], [-190, 190]], 14);
+function loopPoint(L, s) {
+  s = ((s % L.len) + L.len) % L.len;
+  let i = 1;
+  while (L.cum[i] < s) i++;
+  const a = L.pts[i - 1], b = L.pts[i], t = (s - L.cum[i - 1]) / (L.cum[i] - L.cum[i - 1]);
+  return { x: a[0] + (b[0] - a[0]) * t, z: a[1] + (b[1] - a[1]) * t, yaw: Math.atan2(b[0] - a[0], b[1] - a[1]) };
+}
+const bus = { s: 0, y: 0, honk: 0 };
+{
+  const g = new THREE.Group(), red = lambert(0xd32f2f), dark = lambert(0x1d2a36), black = lambert(0x1a1a1a);
+  g.add(box(2.5, 4.0, 9, red, 0, 2.4, 0));
+  g.add(box(2.54, 0.15, 9.04, lambert(0xffffff), 0, 2.8, 0));
+  for (const y of [1.95, 3.55]) {
+    g.add(box(2.54, 0.85, 7.4, dark, 0, y, -0.4));
+    g.add(box(2.2, 0.85, 0.04, dark, 0, y, 4.51));
+  }
+  g.add(box(2.4, 0.08, 8.8, lambert(0xb71c1c), 0, 4.43, 0));
+  const sign = facePlane(canvasTex(256, 48, (c, w, h) => {
+    c.fillStyle = '#111'; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#ffb300'; c.font = 'bold 34px Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('LUCA ⇄ FRED', w / 2, h / 2 + 2);
+  }), 1.9, 0.36);
+  sign.position.set(0, 4.15, 4.52);
+  g.add(sign);
+  for (const z of [3.2, -3.2]) for (const sx of [-1, 1]) {
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.35, 16), black);
+    w.rotation.z = Math.PI / 2; w.position.set(sx * 1.15, 0.55, z); g.add(w);
+  }
+  for (const sx of [-1, 1]) g.add(box(0.35, 0.2, 0.05, new THREE.MeshBasicMaterial({ color: 0xffffff }), sx * 0.85, 0.9, 4.52));
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  scene.add(g);
+  bus.g = g;
+}
+function updateBus(dt) {
+  bus.s += 12 * dt;
+  const p = loopPoint(BUS_LOOP, bus.s);
+  bus.y = support(p.x, p.z, bus.y + 0.3);
+  const fy = support(p.x + Math.sin(p.yaw) * 3.5, p.z + Math.cos(p.yaw) * 3.5, bus.y + 0.6);
+  const by = support(p.x - Math.sin(p.yaw) * 3.5, p.z - Math.cos(p.yaw) * 3.5, bus.y + 0.6);
+  bus.g.position.set(p.x, bus.y, p.z);
+  bus.g.rotation.set(-Math.atan2(fy - by, 7), p.yaw, 0, 'YXZ');
+  // Bump the car when it drives into the bus
+  bus.honk -= dt;
+  const dx = car.pos.x - p.x, dz = car.pos.z - p.z;
+  const lx = dx * Math.cos(p.yaw) - dz * Math.sin(p.yaw), lz = dx * Math.sin(p.yaw) + dz * Math.cos(p.yaw);
+  if (car.eatenT <= 0 && Math.abs(lx) < 2.3 && Math.abs(lz) < 5.8 && Math.abs(car.pos.y - RIDE - bus.y) < 3) {
+    const push = lx >= 0 ? 1 : -1;
+    car.pos.x += Math.cos(p.yaw) * push * 0.5; car.pos.z -= Math.sin(p.yaw) * push * 0.5;
+    if (!car.air) car.speed *= -0.4;
+    if (bus.honk <= 0) { sfx.honk(); popup('Pó-pó! 🚌', 'blue'); bus.honk = 2; }
+  }
+}
+
+// ---------- Digger: key E breaks what is in front ----------
+let digCool = 0;
+function breakIt(b) {
+  b.alive = false; b.t = 30;
+  for (const m of b.meshes) m.visible = false;
+  burst(new THREE.Vector3(b.x, 1.5, b.z), b.color);
+  sfx.crash(); addScore(50); popup('Destruído! 💥 +50');
+}
+function updateBreakables(dt) {
+  for (const b of breakables) if (!b.alive) {
+    b.t -= dt;
+    if (b.t <= 0) { b.alive = true; for (const m of b.meshes) m.visible = true; }
+  }
+}
+function dig() {
+  if (digCool > 0 || car.air || car.eatenT > 0) return;
+  digCool = 0.7; truck.digT = 0.7; sfx.thud();
+  setTimeout(() => {
+    const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
+    const cx = car.pos.x + fx * 6, cz = car.pos.z + fz * 6, feet = car.pos.y - RIDE;
+    const near = (x, z, r = 0) => Math.hypot(x - cx, z - cz) < 5 + r;
+    let any = false;
+    for (const b of breakables) if (b.alive && near(b.x, b.z, b.r)) { breakIt(b); any = true; }
+    for (const t of tractors) if (t.state === 0 && !t.gone && near(t.x, t.z)) { tipTractor(t, 1); any = true; }
+    if (train.state === 'run' && train.units.some(u => near(u.outer.position.x, u.outer.position.z, 2))) { trainFall(1); any = true; }
+    if (rex.ko <= 0 && near(rex.pos.x, rex.pos.z, 2)) { knockRex(); any = true; }
+    if (rocket.state === 'pad' && near(rocket.x, rocket.z, 2)) { launchRocket(); any = true; }
+    for (const b of balls) if (!b.gone && near(b.m.position.x, b.m.position.z, b.r)) { b.vel.set(fx * 25, 0, fz * 25); any = true; }
+    for (const b of balloons) if (b.alive && near(b.obj.position.x, b.obj.position.z) && b.obj.position.y < feet + 8) { popBalloon(b); any = true; }
+    if (!any) popup('⛏️', 'blue');
+  }, 250);
+}
+
 // ---------- Shots (key T) ----------
 // Energy balls fly from the front of the car. They aim at the nearest target in
 // front: a balloon, the T-Rex, the train or a tractor.
@@ -1254,6 +1516,7 @@ function shotTargets() {
     list.push({ p: new THREE.Vector3(u.outer.position.x, 2, u.outer.position.z), r: 3, hit: () => trainFall(Math.random() < 0.5 ? -1 : 1) });
   }
   for (const t of tractors) if (t.state === 0 && !t.gone) list.push({ p: new THREE.Vector3(t.x, 1.5, t.z), r: 2, hit: () => tipTractor(t, Math.random() < 0.5 ? -1 : 1) });
+  if (rocket.state === 'pad') list.push({ p: new THREE.Vector3(rocket.x, 8, rocket.z), r: 3, hit: launchRocket });
   return list;
 }
 function knockRex() {
@@ -1706,6 +1969,69 @@ function buildMater() {
   return { root, ...wheels, wheelR: 0.42, flames: [] };
 }
 
+// Black bat car with tail fins and a jet at the back (afterburner on Shift)
+function buildBatmobile() {
+  const root = new THREE.Group(), vis = new THREE.Group();
+  vis.position.y = -RIDE; root.add(vis);
+  const black = new THREE.MeshStandardMaterial({ color: 0x15161a, metalness: 0.6, roughness: 0.35 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0x0d1b2a, metalness: 0.5, roughness: 0.1 });
+  const W = 2.3;
+  const body = new THREE.Shape();
+  body.moveTo(-2.9, 0.3); body.lineTo(2.7, 0.3); body.quadraticCurveTo(3.0, 0.35, 2.95, 0.55);
+  body.lineTo(1.1, 0.8); body.lineTo(0.35, 1.0); body.lineTo(-0.9, 1.0); body.lineTo(-1.7, 0.85); body.lineTo(-2.9, 0.9);
+  body.closePath();
+  vis.add(sideMesh(body, W, black, 0.08));
+  const cab = new THREE.Shape();
+  cab.moveTo(1.0, 0.82); cab.quadraticCurveTo(0.4, 1.25, -0.3, 1.22); cab.quadraticCurveTo(-0.85, 1.15, -1.1, 0.86); cab.closePath();
+  vis.add(sideMesh(cab, 1.3, glass, 0.05));
+  for (const s of [-1, 1]) {
+    const fin = new THREE.Shape();
+    fin.moveTo(-1.4, 0.85); fin.lineTo(-2.95, 0.9); fin.lineTo(-3.25, 1.9); fin.quadraticCurveTo(-2.5, 1.3, -1.4, 0.85);
+    const m = sideMesh(fin, 0.08, black);
+    m.position.x = s * 0.95; vis.add(m);
+    vis.add(box(0.4, 0.08, 0.05, new THREE.MeshBasicMaterial({ color: 0x9fd8ff }), s * 0.75, 0.55, 2.92));
+  }
+  vis.add(box(1.6, 0.2, 0.1, lambert(0x333333), 0, 0.42, 2.95));
+  const jet = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.42, 0.4, 16), lambert(0x333333));
+  jet.rotation.x = Math.PI / 2; jet.position.set(0, 0.62, -2.95); vis.add(jet);
+  const flame = new THREE.Group();
+  const fo = new THREE.Mesh(new THREE.ConeGeometry(0.32, 2.0, 12), new THREE.MeshBasicMaterial({ color: 0xff6d00 }));
+  const fi = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.1, 10), new THREE.MeshBasicMaterial({ color: 0x80d8ff }));
+  fo.position.y = 1.0; fi.position.y = 0.55;
+  flame.add(fo, fi); flame.rotation.x = -Math.PI / 2; flame.position.set(0, 0.62, -3.15); flame.visible = false;
+  vis.add(flame);
+  const wheels = wheelSet(vis, W, 0.46, 0.42, [1.8, -1.75], 0.46, 0x333333);
+  return { root, ...wheels, wheelR: 0.46, flames: [flame] };
+}
+
+// Yellow digger on tracks with an arm and a bucket. The arm swings down when it digs.
+function buildDigger() {
+  const root = new THREE.Group(), vis = new THREE.Group();
+  vis.position.y = -RIDE; root.add(vis);
+  const yellow = lambert(0xfbc02d), black = lambert(0x1a1a1a), grey = lambert(0x424242);
+  for (const s of [-1, 1]) {
+    vis.add(box(0.7, 0.8, 3.8, black, s * 1.15, 0.5, 0));
+    for (const z of [1.9, -1.9]) {
+      const end = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.7, 12), black);
+      end.rotation.z = Math.PI / 2; end.position.set(s * 1.15, 0.5, z); vis.add(end);
+    }
+  }
+  vis.add(box(2.0, 0.4, 2.4, grey, 0, 1.05, 0));
+  vis.add(box(2.4, 1.0, 3.0, yellow, 0, 1.75, -0.2));
+  vis.add(box(2.4, 0.7, 0.6, lambert(0xf9a825), 0, 1.7, -1.85));
+  vis.add(box(1.1, 1.2, 1.3, yellow, -0.55, 2.85, 0.5));
+  vis.add(box(0.9, 0.8, 0.04, lambert(0x1d2a36), -0.55, 2.95, 1.16));
+  vis.add(box(0.04, 0.7, 0.9, lambert(0x1d2a36), -1.11, 2.95, 0.5));
+  const arm = new THREE.Group();
+  arm.position.set(0.55, 2.2, 1.0);
+  const o = new THREE.Vector3(0, 0, 0), elbow = new THREE.Vector3(0, 1.6, 2.6), wrist = new THREE.Vector3(0, -0.4, 3.6);
+  arm.add(bar(o, elbow, 0.2, yellow), bar(elbow, wrist, 0.16, yellow));
+  arm.add(box(1.2, 0.7, 0.8, grey, 0, -0.65, 3.75));
+  for (const x of [-0.45, -0.15, 0.15, 0.45]) arm.add(box(0.12, 0.25, 0.12, lambert(0xbdbdbd), x, -1.05, 4.0));
+  vis.add(arm);
+  return { root, steerPivots: [], spinners: [], wheelR: 0.4, flames: [], arm };
+}
+
 // ---------- Drivers ----------
 const DRIVERS = {
   luca: { name: 'Luca', note: '5 anos', hair: 0x3b2618, hairCss: '#3b2618', shirt: 0x1e88e5, scale: 1.0, head: 0.2 },
@@ -1799,7 +2125,13 @@ const CARS = {
     max: 40, turbo: 52, accel: 30, turn: 2.4, jump: 7.5, hitR: 2.4, horn: 'kachow' },
   mater: { name: 'Mate', note: 'rei da marcha-atrás 🔙 H: buzina', color: '#8a5a33', build: buildMater,
     seat: { x: 0, y: 1.0, z: -1.75, legs: true },
-    max: 26, turbo: 36, accel: 18, turn: 2.1, jump: 7.5, hitR: 2.7, horn: 'honk', reverse: 28 }
+    max: 26, turbo: 36, accel: 18, turn: 2.1, jump: 7.5, hitR: 2.7, horn: 'honk', reverse: 28 },
+  batmobile: { name: 'Batmobile', note: 'turbo com chama 🦇', color: '#212121', build: buildBatmobile,
+    seat: { x: 0, y: 1.0, z: -0.3, hatch: 1.22 },
+    max: 42, turbo: 56, accel: 30, turn: 2.2, jump: 7.5, hitR: 2.5, afterburner: true },
+  digger: { name: 'Escavadora', note: 'tecla E destrói ⛏️', color: '#f9a825', build: buildDigger,
+    seat: { x: -0.55, y: 3.2, z: 0.4, hatch: 3.47 },
+    max: 16, turbo: 22, accel: 10, turn: 1.6, jump: 5, hitR: 3.0, dig: true }
 };
 const CAR_IDS = Object.keys(CARS);
 let carId = 'cyber', def = CARS.cyber, truck = null;
@@ -1813,6 +2145,7 @@ function setCar(id) {
   document.getElementById('fuelLabel').style.display = def.jets ? 'block' : 'none';
   sirenOn = false;
   sfx.siren(false);
+  document.body.classList.toggle('digger', !!def.dig);
 }
 let sirenOn = false;
 
@@ -2063,7 +2396,11 @@ let started = false, jumpQueued = false;
 addEventListener('keydown', e => {
   keys[e.code] = true;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
-  if (e.repeat) return;
+  if (!e.repeat) pressKey(e.code, e.key);
+});
+// Actions for a key press (from the keyboard or from a touch button)
+function pressKey(code, key = '') {
+  const e = { code, key };
   if (e.code === 'KeyP') { showMenu(!menuOpen); return; }
   if (menuOpen) {
     if (e.code === 'Escape') showMenu(false);
@@ -2071,6 +2408,7 @@ addEventListener('keydown', e => {
     if (n >= 1 && n <= PLANETS.length) choosePlanet(n - 1);
     return;
   }
+  if (e.code === 'KeyE' && def.dig && started) dig();
   if (e.code === 'Space') jumpQueued = true;
   if (e.code === 'KeyM') sfx.toggle();
   if (e.code === 'KeyR') resetCar();
@@ -2087,7 +2425,7 @@ addEventListener('keydown', e => {
     if (def.horn === 'kachow') { popup('Ka-chow! ⚡', 'gold'); sfx.kachow(); }
     if (def.horn === 'honk') { popup('Biiip biiip!', 'blue'); sfx.honk(); }
   }
-});
+}
 addEventListener('keyup', e => { keys[e.code] = false; });
 const k = c => !!keys[c];
 const kUp = () => k('ArrowUp') || k('KeyW');
@@ -2095,6 +2433,23 @@ const kDown = () => k('ArrowDown') || k('KeyS');
 const kLeft = () => k('ArrowLeft') || k('KeyA');
 const kRight = () => k('ArrowRight') || k('KeyD');
 
+// Touch buttons: "hold" buttons act as held keys, "tap" buttons as one key press
+if (TOUCH) document.body.classList.add('touch');
+document.querySelectorAll('#touch [data-hold]').forEach(btn => {
+  const code = btn.dataset.hold;
+  const down = e => {
+    e.preventDefault(); keys[code] = true; btn.classList.add('on'); pressKey(code);
+    try { btn.setPointerCapture(e.pointerId); } catch (err) { /* capture is only a help */ }
+  };
+  const up = e => { e.preventDefault(); keys[code] = false; btn.classList.remove('on'); };
+  btn.addEventListener('pointerdown', down);
+  btn.addEventListener('pointerup', up);
+  btn.addEventListener('pointercancel', up);
+  btn.addEventListener('contextmenu', e => e.preventDefault());
+});
+document.querySelectorAll('#touch [data-tap]').forEach(btn => {
+  btn.addEventListener('pointerdown', e => { e.preventDefault(); pressKey(btn.dataset.tap); });
+});
 for (const id of DRIVER_IDS) {
   const d = DRIVERS[id], btn = document.createElement('button');
   btn.className = 'drvbtn' + (id === driverId ? ' on' : '');
@@ -2415,6 +2770,7 @@ setCar('cyber');
 setPlanet(2);
 updateTrain(0);
 updateRex(0);
+updateBus(0);
 const clock = new THREE.Clock();
 let time = 0, camYaw = 0;
 camera.position.set(0, 5, -12);
@@ -2441,6 +2797,9 @@ function loop() {
     updateTrain(dt);
     updateRex(dt);
     updateShots(dt);
+    updateRocket(dt);
+    updateBus(dt);
+    updateBreakables(dt);
     updateTractors(dt);
     updateLap();
   }
@@ -2458,9 +2817,15 @@ function loop() {
     const on = Math.floor(time * 6) % 2;
     truck.beacons.forEach((b, i) => b.material.color.setHex((i === on) ? 0x4d8dff : 0x0a1a4a));
   }
+  const burner = def.afterburner && !car.air && (k('ShiftLeft') || k('ShiftRight')) && Math.abs(car.speed) > 3;
   for (const f of truck.flames) {
-    f.visible = car.jetOn;
-    if (car.jetOn) f.scale.set(1, 0.8 + Math.random() * 0.5, 1);
+    f.visible = car.jetOn || burner;
+    if (f.visible) f.scale.set(1, 0.8 + Math.random() * 0.5, 1);
+  }
+  if (truck.arm) {
+    digCool -= dt;
+    truck.digT = Math.max(0, (truck.digT || 0) - dt);
+    truck.arm.rotation.x = Math.sin((1 - truck.digT / 0.7) * Math.PI) * (truck.digT > 0 ? 0.7 : 0);
   }
 
   // Balloons
