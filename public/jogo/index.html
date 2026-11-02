@@ -73,7 +73,7 @@
 </div>
 <div id="airbox" class="shadow"></div>
 <div id="popups"></div>
-<div id="help">↑ ↓ acelerar / travar · ← → virar · Espaço saltar (Roadster: segura para os jatos) · Shift turbo · No ar: ↑ ↓ mortal · ← → pião · Q / E pirueta · R endireitar · C trocar de carro · D condutor · H buzina / sirene / Ka-chow · P planeta · M som</div>
+<div id="help">↑ ↓ acelerar / travar · ← → virar · Espaço saltar (Roadster: segura para os jatos) · Shift turbo · T disparar · No ar: ↑ ↓ mortal · ← → pião · Q / E pirueta · R endireitar · C trocar de carro · D condutor · H buzina / sirene / Ka-chow · P planeta · M som</div>
 <div id="planets">
   <div class="card">
     <h2>Escolhe o planeta</h2>
@@ -91,6 +91,7 @@
       <tr><td>Espaço</td><td>saltar</td></tr>
       <tr><td>Espaço (segurar)</td><td>jatos do Roadster, no ar</td></tr>
       <tr><td>Shift</td><td>turbo</td></tr>
+      <tr><td>T</td><td>disparar (balões, T-Rex, comboio)</td></tr>
       <tr><td>No ar ↑ ↓</td><td>mortal para a frente / para trás</td></tr>
       <tr><td>No ar ← →</td><td>pião</td></tr>
       <tr><td>No ar Q / E</td><td>pirueta</td></tr>
@@ -1093,6 +1094,15 @@ const train = { s: 0, units: [], state: 'run', t: 0, toot: 0 };
     train.units.push({ outer, pivot, model: u.g, len: u.len, dir: 1 });
   }
 }
+// Fall over to one side (dir = +1 or -1), over the edge of the wheels
+function trainFall(dir) {
+  train.state = 'fall'; train.t = 0;
+  for (const u of train.units) {
+    u.dir = dir;
+    u.pivot.position.x = u.dir * 1.3; u.model.position.x = -u.dir * 1.3;
+  }
+  sfx.crash(); sfx.toot(); addScore(300); popup('Comboio caiu! 🚂💥 +300', 'gold');
+}
 function updateTrain(dt) {
   if (train.state === 'run') train.s += TRAIN.speed * dt;
   else {
@@ -1120,14 +1130,8 @@ function updateTrain(dt) {
     }
   });
   if (hit) {
-    // Fall over away from the car, over the edge of the wheels
-    train.state = 'fall'; train.t = 0;
-    for (const u of train.units) {
-      u.dir = hit > 0 ? -1 : 1;
-      u.pivot.position.x = u.dir * 1.3; u.model.position.x = -u.dir * 1.3;
-    }
     if (!car.air) car.speed *= -0.3;
-    sfx.crash(); sfx.toot(); addScore(300); popup('Comboio caiu! 🚂💥 +300', 'gold');
+    trainFall(hit > 0 ? -1 : 1);
   }
   train.toot -= dt;
   if (train.state === 'run' && train.toot <= 0 && Math.hypot(car.pos.x - train.units[0].outer.position.x, car.pos.z - train.units[0].outer.position.z) < 70) {
@@ -1137,7 +1141,7 @@ function updateTrain(dt) {
 
 // ---------- T-Rex ----------
 // Walks slowly after the car (or a ball or a tractor) and eats it.
-const rex = { pos: new THREE.Vector3(60, 0, 110), yaw: Math.PI, target: null, cool: 0, chomp: 0, phase: 0, think: 0, roared: false };
+const rex = { pos: new THREE.Vector3(60, 0, 110), yaw: Math.PI, target: null, cool: 0, chomp: 0, phase: 0, think: 0, roared: false, ko: 0, lie: 0 };
 {
   const g = new THREE.Group(), green = lambert(0x4caf50), belly = lambert(0xc5e1a5), white = lambert(0xffffff);
   const add = (geo, mat, x, y, z, parent = g) => { const m = shade(new THREE.Mesh(geo, mat)); m.position.set(x, y, z); parent.add(m); return m; };
@@ -1173,6 +1177,18 @@ const rex = { pos: new THREE.Vector3(60, 0, 110), yaw: Math.PI, target: null, co
 }
 function updateRex(dt) {
   rex.cool -= dt; rex.think -= dt;
+  if (rex.ko > 0) {                       // knocked out: lie down, then stand up
+    rex.ko -= dt;
+    rex.lie = Math.min(1, rex.lie + dt * 2);
+    if (rex.ko <= 0) { rex.cool = 5; popup('🦖 O T-Rex acordou!', 'red'); }
+  } else rex.lie = Math.max(0, rex.lie - dt);
+  if (rex.lie > 0) {
+    rex.g.position.set(rex.pos.x, rex.lie * 2.2, rex.pos.z);
+    rex.g.rotation.set(0, rex.yaw, rex.lie * Math.PI / 2);
+    rex.jaw.rotation.x = 0.5;
+    return;
+  }
+  rex.g.rotation.z = 0;
   const feet = car.pos.y - RIDE;
   const dCar = Math.hypot(car.pos.x - rex.pos.x, car.pos.z - rex.pos.z);
   // Choose what to chase: the car when it is near, else the nearest ball or tractor
@@ -1222,6 +1238,73 @@ function updateRex(dt) {
   rex.legs[1].rotation.x = -Math.sin(rex.phase) * 0.5;
   rex.chomp = Math.max(0, rex.chomp - dt);
   rex.jaw.rotation.x = rex.chomp > 0 ? Math.abs(Math.sin(rex.chomp * 12)) * 0.6 : 0.08;
+}
+
+// ---------- Shots (key T) ----------
+// Energy balls fly from the front of the car. They aim at the nearest target in
+// front: a balloon, the T-Rex, the train or a tractor.
+const shots = [], shotGeo = new THREE.SphereGeometry(0.35, 10, 8);
+const shotMats = [0xffeb3b, 0xff4081, 0x00e5ff, 0x76ff03].map(c => new THREE.MeshBasicMaterial({ color: c }));
+let shotCool = 0;
+function shotTargets() {
+  const list = [];
+  for (const b of balloons) if (b.alive) list.push({ p: b.obj.position, r: 1.4, hit: () => popBalloon(b) });
+  if (rex.ko <= 0) list.push({ p: new THREE.Vector3(rex.pos.x, 4.5, rex.pos.z), r: 3.5, hit: knockRex });
+  if (train.state === 'run') for (const u of train.units) {
+    list.push({ p: new THREE.Vector3(u.outer.position.x, 2, u.outer.position.z), r: 3, hit: () => trainFall(Math.random() < 0.5 ? -1 : 1) });
+  }
+  for (const t of tractors) if (t.state === 0 && !t.gone) list.push({ p: new THREE.Vector3(t.x, 1.5, t.z), r: 2, hit: () => tipTractor(t, Math.random() < 0.5 ? -1 : 1) });
+  return list;
+}
+function knockRex() {
+  rex.ko = 12; rex.target = null; rex.chomp = 0;
+  sfx.roar(); addScore(500); popup('🦖 T-Rex KO! 💫 +500', 'gold');
+}
+function shoot() {
+  const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
+  const from = new THREE.Vector3(car.pos.x + fx * 3, car.pos.y + 0.6, car.pos.z + fz * 3);
+  let dir = new THREE.Vector3(fx, 0.04, fz).normalize(), best = 1e9;
+  for (const t of shotTargets()) {
+    const v = new THREE.Vector3().subVectors(t.p, from), d = v.length();
+    if (d > 150 || d < 1) continue;
+    const ang = Math.abs(wrap(Math.atan2(v.x, v.z) - car.yaw));
+    if (ang > 0.35) continue;
+    const score = d * (1 + ang * 3);
+    if (score < best) { best = score; dir = v.normalize(); }
+  }
+  const m = new THREE.Mesh(shotGeo, pick(shotMats));
+  m.position.copy(from);
+  scene.add(m);
+  const vel = dir.multiplyScalar(80);
+  if (!car.air) { vel.x += fx * car.speed; vel.z += fz * car.speed; }
+  shots.push({ m, vel, life: 2 });
+  sfx.pew();
+}
+const segTmp = new THREE.Vector3(), ptTmp = new THREE.Vector3();
+function updateShots(dt) {
+  shotCool -= dt;
+  if (k('KeyT') && shotCool <= 0 && car.eatenT <= 0) { shoot(); shotCool = 0.22; }
+  if (!shots.length) return;
+  const targets = shotTargets();
+  for (let i = shots.length - 1; i >= 0; i--) {
+    const s = shots[i], a = s.m.position.clone();
+    s.m.position.addScaledVector(s.vel, dt);
+    s.life -= dt;
+    // Test the line from the old place to the new place, so fast shots do not jump over a target
+    let done = s.life <= 0 || s.m.position.y < 0;
+    if (!done) {
+      segTmp.subVectors(s.m.position, a);
+      const len2 = segTmp.lengthSq();
+      for (const t of targets) {
+        const u = clamp(ptTmp.subVectors(t.p, a).dot(segTmp) / len2, 0, 1);
+        if (ptTmp.copy(a).addScaledVector(segTmp, u).distanceTo(t.p) < t.r) {
+          t.hit(); burst(s.m.position, s.m.material.color.getHex()); done = true; break;
+        }
+      }
+    }
+    if (!done && blocked(s.m.position.x, s.m.position.z, s.m.position.y - 0.7)) done = true;
+    if (done) { scene.remove(s.m); shots.splice(i, 1); }
+  }
 }
 
 // Ramps and cushions on the grass
@@ -1895,6 +1978,7 @@ const sfx = {
   kachow() { this.noise(0.06, 0.4, 3000); [1320, 1760, 2093].forEach((f, i) => setTimeout(() => this.tone(f, f * 1.02, 0.2, 'triangle', 0.15), i * 60)); },
   honk() { this.tone(330, 320, 0.35, 'square', 0.08); this.tone(415, 405, 0.35, 'square', 0.08); },
   moo() { this.tone(170, 105, 0.8, 'sawtooth', 0.12); },
+  pew() { this.tone(1400, 300, 0.12, 'square', 0.06); },
   toot() { this.tone(440, 430, 0.6, 'triangle', 0.18); this.tone(554, 545, 0.6, 'triangle', 0.14); },
   roar() { this.noise(1.2, 0.6, 250); this.tone(110, 55, 1.2, 'sawtooth', 0.2); },
   // Police siren: a tone that goes up and down (wee-woo)
@@ -2284,19 +2368,21 @@ function updateBalls(dt) {
   }
 }
 
+// Tip over to one side, around the edge of the wheels
+function tipTractor(tr, dir) {
+  tr.dir = dir;
+  tr.pivot.position.x = tr.dir * 1.2; tr.model.position.x = -tr.dir * 1.2;
+  tr.state = 1; tr.t = 0;
+  sfx.moo(); addScore(100); popup('Trator virado! 🚜 +100');
+}
 function updateTractors(dt) {
   const feet = car.pos.y - RIDE;
   for (const tr of tractors) {
     if (tr.gone > 0) { tr.gone -= dt; if (tr.gone <= 0) { tr.gone = 0; tr.g.visible = true; } continue; }
     if (tr.state === 0) {
       const dx = tr.x - car.pos.x, dz = tr.z - car.pos.z;
-      if (feet < 3 && Math.hypot(dx, dz) < 2.8) {
-        // Tip over away from the car, around the edge of the wheels
-        tr.dir = (-dx * Math.cos(tr.yaw) + dz * Math.sin(tr.yaw)) >= 0 ? -1 : 1;
-        tr.pivot.position.x = tr.dir * 1.2; tr.model.position.x = -tr.dir * 1.2;
-        tr.state = 1; tr.t = 0;
-        sfx.moo(); addScore(100); popup('Trator virado! 🚜 +100');
-      }
+      // Tip over away from the car
+      if (feet < 3 && Math.hypot(dx, dz) < 2.8) tipTractor(tr, (-dx * Math.cos(tr.yaw) + dz * Math.sin(tr.yaw)) >= 0 ? -1 : 1);
     } else {
       tr.t += dt;
       tr.pivot.rotation.z = -tr.dir * Math.min(1, tr.t / 0.45) * Math.PI / 2;
@@ -2354,6 +2440,7 @@ function loop() {
     updateBalls(dt);
     updateTrain(dt);
     updateRex(dt);
+    updateShots(dt);
     updateTractors(dt);
     updateLap();
   }
